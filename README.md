@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Fundamentos de programación de sistemas de arquitectura x86
 
 Este software está compuesto por un conjunto de proyectos de 
@@ -162,3 +163,6 @@ cual se encuentra señalado de forma explícita de ser el caso.
 El software y la documentación se ofrecen sin ningún tipo de garantía implícita
 o explícita, por lo cual el autor no se hace responsable por cualquier daño o
 perjuicio causado por el uso parcial o total del material aquí dispuesto. 
+=======
+# SO
+>>>>>>> origin/main
