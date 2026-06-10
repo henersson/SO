@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel Administrador - Audio Distribuido</title>
+    <style>
+        :root {
+            --primary: #1d3557;
+            --accent: #457b9d;
+            --success: #2a9d8f;
+            --danger: #e76f51;
+            --bg: #f4f7fb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d9e2ec;
+            --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, rgba(29,53,87,0.06), transparent 240px), var(--bg);
+            color: var(--text);
+        }
+
+        .page-shell {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 22px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary), #0f2742);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 { margin: 0; font-size: 1.3rem; }
+        header p { margin: 4px 0 0 0; color: rgba(255,255,255,0.82); }
+
+        .grid {
+            margin-top: 18px;
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1.2fr 1fr;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h2 { margin: 0 0 14px 0; font-size: 1.05rem; }
+        .muted { color: var(--muted); }
+
+        .toolbar, .type-bar, .action-bar { display: flex; flex-wrap: wrap; gap: 10px; }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font: inherit;
+            transition: transform 0.15s ease;
+        }
+
+        button:hover { transform: translateY(-1px); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-soft { background: #e8f1f8; color: #214; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); }
+
+        input, select, textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font: inherit;
+            background: white;
+        }
+
+        textarea { min-height: 100px; resize: vertical; }
+
+        .stack { display: grid; gap: 12px; }
+        .meta-grid { display: grid; gap: 10px; }
+
+        .audio-table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 14px;
+        }
+
+        .audio-table th,
+        .audio-table td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid rgba(217, 226, 236, 0.85);
+            vertical-align: top;
+        }
+
+        .audio-table th { background: #f7fafc; }
+        .audio-table tr:hover td { background: #fbfdff; }
+
+        .detail-box {
+            min-height: 100px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .detail-item {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(217, 226, 236, 0.85);
+        }
+
+        .detail-item:last-child { border-bottom: none; }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .field-grid .full { grid-column: 1 / -1; }
+
+        .empty-state {
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            background: #fbfdff;
+        }
+
+        #log-admin {
+            max-height: 240px;
+            overflow: auto;
+            display: grid;
+            gap: 8px;
+        }
+
+        .log-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(217, 226, 236, 0.9);
+            background: #fbfdff;
+        }
+
+        @media (max-width: 980px) {
+            .grid { grid-template-columns: 1fr; }
+            .field-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <header>
+            <div>
+                <h1>Panel Administrador</h1>
+                <p>Gestión de catálogo, metadatos y carga de audios.</p>
+            </div>
+            <div class="toolbar">
+                <button class="btn-soft" type="button" id="btn-cargar-tipos">Cargar tipos</button>
+                <button class="btn-accent" type="button" id="btn-cargar-audios">Actualizar catálogo</button>
+                <a href="index.html" style="text-decoration:none;"><button class="btn-primary" type="button">Volver al cliente</button></a>
+            </div>
+        </header>
+
+        <div class="grid">
+            <section class="stack">
+                <article class="card">
+                    <h2>Tipos de audio</h2>
+                    <div id="admin-tipos" class="type-bar">
+                        <div class="empty-state">Pulsa “Cargar tipos”.</div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>Catálogo de audios</h2>
+                    <div class="muted">Haz clic sobre un audio para ver sus metadatos completos.</div>
+                    <div style="overflow:auto; margin-top: 12px;">
+                        <table class="audio-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Título</th>
+                                    <th>Tipo</th>
+                                    <th>Metadatos resumidos</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-audios">
+                                <tr><td colspan="5"><div class="empty-state">Pulsa “Actualizar catálogo”.</div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>Detalle del audio</h2>
+                    <div id="detalle-audio" class="detail-box">
+                        <div class="empty-state">Selecciona un audio de la tabla.</div>
+                    </div>
+                </article>
+            </section>
+
+            <section class="stack">
+                <article class="card">
+                    <h2>Registrar nuevo audio</h2>
+                    <div class="stack">
+                        <label>
+                            Tipo
+                            <select id="tipo-audio">
+                                <option value="1">Música</option>
+                                <option value="2">Podcast</option>
+                                <option value="3">Audiolibro</option>
+                                <option value="4">Ruido Blanco</option>
+                            </select>
+                        </label>
+                        <div id="campos-dinamicos" class="field-grid"></div>
+                        <label class="full">
+                            Archivo de audio
+                            <input id="archivo-audio" type="file" accept="audio/*" />
+                        </label>
+                        <div class="action-bar">
+                            <button class="btn-success" type="button" id="btn-registrar">Registrar audio</button>
+                            <button class="btn-danger" type="button" id="btn-limpiar">Limpiar formulario</button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>Log admin</h2>
+                    <div id="log-admin"></div>
+                </article>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const nombresTipos = {
+            1: 'Música',
+            2: 'Podcast',
+            3: 'Audiolibro',
+            4: 'Ruido Blanco'
+        };
+
+        let catalogoAudios = [];
+        let audioSeleccionado = null;
+
+        function escribirLog(mensaje) {
+            const log = document.getElementById('log-admin');
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.textContent = `[${new Date().toLocaleTimeString()}] ${mensaje}`;
+            log.prepend(item);
+        }
+
+        function camposSegunTipo(tipo) {
+            const configs = {
+                1: [
+                    ['titulo', 'Título del audio'],
+                    ['artista', 'Artista Principal'],
+                    ['album', 'Álbum'],
+                    ['genero', 'Género Musical'],
+                    ['anio', 'Año']
+                ],
+                2: [
+                    ['titulo', 'Título del podcast / episodio'],
+                    ['artista', 'Nombre del Podcast'],
+                    ['album', 'Título del Episodio'],
+                    ['genero', 'Anfitrión / Host'],
+                    ['anio', 'Año']
+                ],
+                3: [
+                    ['titulo', 'Título del libro'],
+                    ['artista', 'Autor'],
+                    ['album', 'Capítulo / Parte'],
+                    ['genero', 'Narrador'],
+                    ['anio', 'Año']
+                ],
+                4: [
+                    ['titulo', 'Nombre descriptivo'],
+                    ['artista', 'Tipo de Sonido'],
+                    ['album', 'Uso Sugerido'],
+                    ['genero', 'Fuente del Audio'],
+                    ['anio', 'Año']
+                ]
+            };
+            return configs[tipo] || configs[1];
+        }
+
+        function renderCamposDinamicos() {
+            const tipo = Number(document.getElementById('tipo-audio').value);
+            const contenedor = document.getElementById('campos-dinamicos');
+            contenedor.innerHTML = '';
+            camposSegunTipo(tipo).forEach(([campo, etiqueta]) => {
+                const wrap = document.createElement('label');
+                wrap.innerHTML = `${etiqueta}<input type="text" id="campo-${campo}" />`;
+                contenedor.appendChild(wrap);
+            });
+        }
+
+        async function cargarAudios() {
+            const resp = await fetch('http://localhost:8082/audios');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            catalogoAudios = await resp.json();
+            renderTablaAudios(catalogoAudios);
+        }
+
+        function renderTipos() {
+            const contenedor = document.getElementById('admin-tipos');
+            const tipos = [...new Map(catalogoAudios.map((audio) => [audio.IDTipo, nombresTipos[audio.IDTipo] || ('Tipo ' + audio.IDTipo)])).entries()];
+            contenedor.innerHTML = '';
+            if (tipos.length === 0) {
+                contenedor.innerHTML = '<div class="empty-state">No hay tipos cargados todavía.</div>';
+                return;
+            }
+
+            tipos.forEach(([id, nombre]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'btn-ghost';
+                button.textContent = nombre;
+                button.addEventListener('click', function() {
+                    renderTablaAudios(catalogoAudios.filter((audio) => Number(audio.IDTipo) === Number(id)));
+                });
+                contenedor.appendChild(button);
+            });
+        }
+
+        function renderTablaAudios(audios) {
+            const tbody = document.getElementById('tabla-audios');
+            tbody.innerHTML = '';
+            if (!audios || audios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No hay audios para mostrar.</div></td></tr>';
+                return;
+            }
+
+            audios.forEach((audio) => {
+                const fila = document.createElement('tr');
+                const metadatosResumen = audio.Metadatos ? Object.entries(audio.Metadatos).slice(0, 2).map(([clave, valor]) => `${clave}: ${valor}`).join(' · ') : 'Sin metadatos';
+                fila.innerHTML = `
+                    <td>${audio.ID}</td>
+                    <td>${audio.Titulo || ''}</td>
+                    <td>${nombresTipos[audio.IDTipo] || ('Tipo ' + audio.IDTipo)}</td>
+                    <td>${metadatosResumen}</td>
+                    <td><button class="btn-soft" type="button">Ver detalle</button></td>
+                `;
+                fila.querySelector('button').addEventListener('click', function() {
+                    audioSeleccionado = audio;
+                    renderDetalleAudio(audio);
+                });
+                fila.addEventListener('click', function(event) {
+                    if (event.target.tagName.toLowerCase() !== 'button') {
+                        audioSeleccionado = audio;
+                        renderDetalleAudio(audio);
+                    }
+                });
+                tbody.appendChild(fila);
+            });
+        }
+
+        function renderDetalleAudio(audio) {
+            const contenedor = document.getElementById('detalle-audio');
+            const metadatos = audio.Metadatos || {};
+            const items = [
+                ['ID', audio.ID],
+                ['Título', audio.Titulo || ''],
+                ['Tipo', nombresTipos[audio.IDTipo] || audio.IDTipo]
+            ];
+
+            Object.entries(metadatos).forEach(([clave, valor]) => items.push([clave, valor]));
+
+            contenedor.innerHTML = items.map(([label, valor]) => `
+                <div class="detail-item"><strong>${label}</strong><span>${valor}</span></div>
+            `).join('');
+        }
+
+        async function registrarAudio() {
+            const tipo = Number(document.getElementById('tipo-audio').value);
+            const payload = {
+                titulo: document.getElementById('campo-titulo').value.trim(),
+                artista: document.getElementById('campo-artista').value.trim(),
+                genero: document.getElementById('campo-genero').value.trim(),
+                album: document.getElementById('campo-album').value.trim(),
+                anio: document.getElementById('campo-anio').value.trim(),
+                idTipo: tipo
+            };
+
+            const respMeta = await fetch('http://localhost:8082/audios/almacenar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!respMeta.ok) {
+                throw new Error('Error al guardar metadatos: HTTP ' + respMeta.status);
+            }
+
+            const dataMeta = await respMeta.json();
+            const fileInput = document.getElementById('archivo-audio');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                escribirLog('Metadatos guardados. Falta seleccionar archivo de audio.');
+                await cargarAudios();
+                renderTipos();
+                return;
+            }
+
+            const base64 = await leerArchivoBase64(file);
+            const respAudio = await fetch('http://localhost:8083/audios/subir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idAudio: dataMeta.idGenerado,
+                    fileName: file.name,
+                    dataBase64: base64
+                })
+            });
+
+            if (!respAudio.ok) {
+                throw new Error('Error al subir audio: HTTP ' + respAudio.status);
+            }
+
+            escribirLog(`Audio registrado correctamente con ID ${dataMeta.idGenerado}.`);
+            await cargarAudios();
+            renderTipos();
+        }
+
+        function leerArchivoBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const contenido = String(event.target.result || '');
+                    resolve(contenido.split(',')[1] || '');
+                };
+                reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function limpiarFormulario() {
+            document.querySelectorAll('#campos-dinamicos input').forEach((input) => input.value = '');
+            document.getElementById('archivo-audio').value = '';
+        }
+
+        document.getElementById('tipo-audio').addEventListener('change', renderCamposDinamicos);
+        document.getElementById('btn-cargar-tipos').addEventListener('click', async function() {
+            try {
+                await cargarAudios();
+                renderTipos();
+                escribirLog('Tipos cargados desde /audios.');
+            } catch (error) {
+                console.error(error);
+                escribirLog('No fue posible cargar tipos desde el servidor REST.');
+            }
+        });
+        document.getElementById('btn-cargar-audios').addEventListener('click', async function() {
+            try {
+                await cargarAudios();
+                renderTipos();
+                escribirLog('Catálogo actualizado.');
+            } catch (error) {
+                console.error(error);
+                escribirLog('No fue posible actualizar el catálogo.');
+            }
+        });
+        document.getElementById('btn-registrar').addEventListener('click', async function() {
+            try {
+                await registrarAudio();
+            } catch (error) {
+                console.error(error);
+                escribirLog(error.message || 'No se pudo registrar el audio.');
+            }
+        });
+        document.getElementById('btn-limpiar').addEventListener('click', limpiarFormulario);
+
+        renderCamposDinamicos();
+        cargarAudios().then(renderTipos).catch((error) => {
+            console.error(error);
+        });
+    </script>
+</body>
+</html>

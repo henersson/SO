@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package servicios;
+option go_package = "/serviciosAudio";
+
+service MetadataService {
+  rpc ObtenerTiposAudio(Empty)                   returns (TiposAudioResponse);
+  rpc ObtenerAudiosPorTipo(AudiosPorTipoRequest) returns (AudiosPorTipoResponse);
+  rpc ObtenerDetalleAudio(DetalleAudioRequest)   returns (DetalleAudioResponse);
+  rpc RegistrarUsuario(RegistrarUsuarioRequest)  returns (RegistrarUsuarioResponse);
+  rpc Login(LoginRequest)                        returns (LoginResponse);
+  rpc AlmacenarAudio(AlmacenarAudioRequest)      returns (AlmacenarAudioResponse);
+}
+
+service StreamingService {
+  rpc ReproducirAudio(ReproducirAudioRequest) returns (stream AudioChunk);
+}
+
+message AudioChunk      { bytes  data   = 1; }
+message Empty           {}
+message TipoAudio       { int32  id     = 1; string nombre = 2; }
+message AudioResumen    { int32  id     = 1; string titulo = 2; }
+message CampoMetadata   { string clave  = 1; string valor  = 2; }
+
+message TiposAudioResponse     { repeated TipoAudio    tipos  = 1; }
+message AudiosPorTipoRequest   { int32 idTipo = 1; }
+message AudiosPorTipoResponse  { repeated AudioResumen audios = 1; }
+message DetalleAudioRequest    { int32 idAudio = 1; }
+message ReproducirAudioRequest { int32 idAudio = 1; }
+
+message DetalleAudioResponse {
+  int32                  id        = 1;
+  int32                  idTipo    = 2;
+  string                 titulo    = 3;
+  repeated CampoMetadata metadatos = 4;
+}
+
+message LoginRequest  { string nickname = 1; string password = 2; }
+message LoginResponse { bool exitoso = 1; string mensaje = 2; }
+
+message RegistrarUsuarioRequest  { string nickname = 1; string password = 2; }
+message RegistrarUsuarioResponse { bool registrado = 1; string mensaje = 2; }
+
+message AlmacenarAudioRequest {
+  string titulo  = 1;
+  string artista = 2;
+  string genero  = 3;
+  string album   = 4;
+  string anio    = 5;
+  int32  idTipo  = 6;
+}
+
+message AlmacenarAudioResponse {
+  bool   guardado          = 1;
+  int32  idGenerado        = 2;
+  string fechaHoraRegistro = 3;
+}

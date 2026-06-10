@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Audio Distribuido</title>
+    <style>
+        :root {
+            --primary: #264653;
+            --accent: #2a9d8f;
+            --accent-2: #e76f51;
+            --bg: #f5f7fa;
+            --card: #ffffff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --border: #d1d5db;
+            --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(42, 157, 143, 0.12), transparent 28%),
+                radial-gradient(circle at top right, rgba(231, 111, 81, 0.10), transparent 24%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        a { color: inherit; }
+
+        .page-shell {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+            padding: 18px 22px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, var(--primary), #1b3a4b 70%, #18313f);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .topbar h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            letter-spacing: 0.02em;
+        }
+
+        .nickname-pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.18);
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1.4fr;
+            gap: 18px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            padding: 18px;
+        }
+
+        .card h2, .card h3 {
+            margin: 0 0 14px 0;
+            font-size: 1.05rem;
+        }
+
+        .muted { color: var(--muted); }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(42, 157, 143, 0.12);
+            color: var(--accent);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        #panel-login {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .login-card {
+            width: min(520px, 100%);
+            text-align: center;
+            padding: 30px;
+            border-radius: 24px;
+            background: rgba(255,255,255,0.92);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+
+        .login-card h1 { margin-top: 0; margin-bottom: 8px; }
+        .login-card p { margin-top: 0; color: var(--muted); }
+
+        .login-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        input[type="text"], input[type="number"], input[type="file"], select, textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font: inherit;
+            background: white;
+        }
+
+        textarea { min-height: 96px; resize: vertical; }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 11px 16px;
+            cursor: pointer;
+            font: inherit;
+            transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        button:hover { transform: translateY(-1px); }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-soft { background: #e8f6f4; color: #17695f; }
+        .btn-danger { background: #fde8e6; color: #b91c1c; }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); }
+
+        .stack { display: grid; gap: 12px; }
+        .toolbar, .reaction-bar, .type-bar { display: flex; flex-wrap: wrap; gap: 10px; }
+
+        .type-bar button.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .audio-list {
+            display: grid;
+            gap: 8px;
+            max-height: 320px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+
+        .audio-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fbfdff;
+        }
+
+        .audio-item strong { display: block; }
+        .audio-item small { color: var(--muted); }
+
+        .detail-grid {
+            display: grid;
+            gap: 8px;
+            font-size: 0.96rem;
+        }
+
+        .detail-grid .row {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(209, 213, 219, 0.6);
+        }
+
+        .detail-grid .row:last-child { border-bottom: none; }
+
+        #audio-player {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        #btn-reproducir {
+            width: 100%;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .emoji-btn {
+            font-size: 1.35rem;
+            width: 48px;
+            height: 48px;
+            display: inline-grid;
+            place-items: center;
+            border-radius: 14px;
+            background: #f1f5f9;
+        }
+
+        #actividad-log, #log {
+            max-height: 220px;
+            overflow: auto;
+            display: grid;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .actividad-item, .log-item {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid rgba(209, 213, 219, 0.8);
+            animation: slideIn 0.4s ease-out;
+        }
+
+        .actividad-item.join { border-left: 4px solid var(--accent); }
+        .actividad-item.pause { border-left: 4px solid #b45309; }
+        .actividad-item.reaccion { border-left: 4px solid var(--primary); }
+
+        #panel-principal { display: none; }
+
+        .admin-link {
+            text-align: right;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+
+        .admin-link a {
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .empty-state {
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px dashed var(--border);
+            color: var(--muted);
+            background: rgba(255,255,255,0.6);
+        }
+
+        .footer-note {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        @keyframes flotar {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-150px); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .reaccion-flotante {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+            font-size: 24px;
+            animation: flotar 2s ease-out forwards;
+        }
+
+        @media (max-width: 960px) {
+            .grid { grid-template-columns: 1fr; }
+            .topbar { flex-direction: column; align-items: flex-start; }
+            .login-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <section id="panel-login">
+        <div class="login-card">
+            <h1>🎵 Sistema de Audio Distribuido</h1>
+            <p>Ingresa tu nickname para comenzar.</p>
+            <div class="login-row">
+                <input id="input-nickname" type="text" placeholder="Tu nickname" autocomplete="nickname" />
+                <button class="btn-primary" id="btn-entrar">Entrar</button>
+            </div>
+            <div class="admin-link">
+                <a href="admin.html" target="_blank" rel="noopener">Panel Administrador →</a>
+            </div>
+            <p class="footer-note">El catálogo se carga desde <strong>http://localhost:8082/audios</strong>.</p>
+        </div>
+    </section>
+
+    <section id="panel-principal" class="page-shell">
+        <header class="topbar">
+            <div>
+                <h1>🎵 Sistema de Audio Distribuido</h1>
+                <div class="muted">Cliente web con catálogo REST, streaming gRPC-Web y reacciones WebSocket</div>
+            </div>
+            <div class="nickname-pill" id="label-nickname">👤 invitado</div>
+        </header>
+
+        <div class="grid">
+            <div class="stack">
+                <article class="card">
+                    <div class="section-title">
+                        <h2>Tipos de audio</h2>
+                        <span class="badge" id="estado-catalogo">Cargando catálogo...</span>
+                    </div>
+                    <div id="tipos-container" class="type-bar">
+                        <div class="empty-state">Cargando...</div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="section-title">
+                        <h2>Lista de audios <span class="muted" id="tipo-seleccionado-label"></span></h2>
+                    </div>
+                    <div id="lista-audios" class="audio-list">
+                        <div class="empty-state">Selecciona un tipo de audio arriba.</div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="section-title">
+                        <h2>Reproductor</h2>
+                        <span class="badge">gRPC-Web vía Envoy</span>
+                    </div>
+                    <audio id="audio-player" controls style="display:none"></audio>
+                    <button id="btn-reproducir" class="btn-accent">▶ Reproducir este audio</button>
+                </article>
+            </div>
+
+            <div class="stack">
+                <article class="card">
+                    <div class="section-title">
+                        <h2>Detalle del audio seleccionado</h2>
+                    </div>
+                    <div id="detalle-audio" class="detail-grid">
+                        <div class="empty-state">Selecciona un audio de la lista.</div>
+                    </div>
+                </article>
+
+                <article class="card" id="panel-reacciones" style="display:none;">
+                    <div class="section-title">
+                        <h2>Reacciones</h2>
+                        <span class="badge">WebSocket :3001</span>
+                    </div>
+                    <div class="reaction-bar">
+                        <button class="emoji-btn" type="button" onclick="enviarReaccion('❤️')">❤️</button>
+                        <button class="emoji-btn" type="button" onclick="enviarReaccion('👏')">👏</button>
+                        <button class="emoji-btn" type="button" onclick="enviarReaccion('🔥')">🔥</button>
+                        <button class="emoji-btn" type="button" onclick="enviarReaccion('😮')">😮</button>
+                        <button class="emoji-btn" type="button" onclick="enviarReaccion('🎵')">🎵</button>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="section-title">
+                        <h2>Actividad en tiempo real</h2>
+                    </div>
+                    <div id="actividad-log">
+                        <div class="empty-state">*Esperando actividad...*</div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="section-title">
+                        <h2>Log técnico</h2>
+                    </div>
+                    <div id="log"></div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <script src="./bundle.js"></script>
+    <script src="./funciones.js"></script>
+    <script>
+        var nicknameActual = "";
+        var audioIdActual = null;
+        var _todosLosAudios = [];
+        var _audioSeleccionado = null;
+        var _canalReaccionesActual = null;
+        var _canalReaccionesDeseado = null;
+
+        if (typeof window !== 'undefined') {
+            window.nicknameActual = nicknameActual;
+            window.audioIdActual = audioIdActual;
+            window._todosLosAudios = _todosLosAudios;
+        }
+
+        const nombresTipos = {
+            1: 'Música',
+            2: 'Podcast',
+            3: 'Audiolibro',
+            4: 'Ruido Blanco'
+        };
+
+       function entrar() {
+            const input = document.getElementById('input-nickname');
+            const nick = (input.value || '').trim();
+            if (!nick) {
+                alert('Escribe un nickname.');
+                return;
+            }
+            nicknameActual = nick;
+            window.nicknameActual = nick;
+            document.getElementById('panel-login').style.display = 'none';
+            document.getElementById('panel-principal').style.display = 'block';
+            document.getElementById('label-nickname').textContent = '👤 ' + nick;
+            cargarCatalogoAudios().then(function () {
+                // Guardar cuántos audios había al iniciar sesión
+                _ultimaCantidadAudios = _todosLosAudios.length;
+                // Iniciar el polling automático del catálogo
+                iniciarPollingCatalogo();
+            });
+        }
+
+        document.getElementById('btn-entrar').addEventListener('click', entrar);
+        document.getElementById('input-nickname').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                entrar();
+            }
+        });
+
+        async function cargarCatalogoAudios() {
+            const contTipos = document.getElementById('tipos-container');
+            const estado = document.getElementById('estado-catalogo');
+            try {
+                estado.textContent = 'Cargando...';
+                const response = await fetch('http://localhost:8082/audios');
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                const audios = await response.json();
+                _todosLosAudios = Array.isArray(audios) ? audios : [];
+                window._todosLosAudios = _todosLosAudios;
+
+                const tipos = new Map();
+                _todosLosAudios.forEach((audio) => {
+                    if (!tipos.has(audio.IDTipo)) {
+                        tipos.set(audio.IDTipo, nombresTipos[audio.IDTipo] || ('Tipo ' + audio.IDTipo));
+                    }
+                });
+
+                renderizarTipos(Array.from(tipos.entries()));
+
+                estado.textContent = _todosLosAudios.length + ' audios cargados';
+                if (_todosLosAudios.length > 0) {
+                    filtrarPorTipo(_todosLosAudios[0].IDTipo);
+                    marcarTipoActivo(_todosLosAudios[0].IDTipo);
+                } else {
+                    contTipos.innerHTML = '<div class="empty-state">No hay audios registrados.</div>';
+                }
+
+                const query = new URLSearchParams(window.location.search);
+                const audioIdQuery = query.get('audioId');
+                if (audioIdQuery) {
+                    const audioEncontrado = _todosLosAudios.find((audio) => String(audio.ID) === String(audioIdQuery));
+                    if (audioEncontrado) {
+                        seleccionarAudio(audioEncontrado.ID);
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando audios:', error);
+                estado.textContent = 'Error al cargar catálogo';
+                contTipos.innerHTML = '<div class="empty-state">No fue posible conectar con http://localhost:8082/audios.</div>';
+            }
+        }
+
+        function renderizarTipos(tipos) {
+            const contenedor = document.getElementById('tipos-container');
+            contenedor.innerHTML = '';
+
+            tipos.forEach(([id, nombre]) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = nombre;
+                btn.dataset.idTipo = String(id);
+                btn.className = 'btn-ghost';
+                btn.addEventListener('click', function() {
+                    marcarTipoActivo(id);
+                    document.getElementById('tipo-seleccionado-label').textContent = '— ' + nombre;
+                    filtrarPorTipo(id);
+                });
+                contenedor.appendChild(btn);
+            });
+        }
+
+        function marcarTipoActivo(idTipo) {
+            document.querySelectorAll('#tipos-container button').forEach((button) => {
+                button.classList.toggle('active', String(button.dataset.idTipo) === String(idTipo));
+            });
+        }
+
+        function filtrarPorTipo(idTipo) {
+            const audios = (_todosLosAudios || []).filter((audio) => Number(audio.IDTipo) === Number(idTipo));
+            renderizarListaAudios(audios);
+        }
+
+        function renderizarListaAudios(audios) {
+            const contenedor = document.getElementById('lista-audios');
+            if (!audios || audios.length === 0) {
+                contenedor.innerHTML = '<div class="empty-state">No hay audios de este tipo.</div>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            audios.forEach((audio) => {
+                const item = document.createElement('div');
+                item.className = 'audio-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${audio.Titulo || 'Sin título'}</strong>
+                        <small>ID: ${audio.ID} · ${nombresTipos[audio.IDTipo] || ('Tipo ' + audio.IDTipo)}</small>
+                    </div>
+                    <button class="btn-soft" type="button">Seleccionar</button>
+                `;
+                item.querySelector('button').addEventListener('click', function() {
+                    seleccionarAudio(audio.ID);
+                });
+                contenedor.appendChild(item);
+            });
+        }
+
+        function seleccionarAudio(idAudio) {
+            const audio = (_todosLosAudios || []).find((item) => Number(item.ID) === Number(idAudio));
+            if (!audio) return;
+
+            _audioSeleccionado = audio;
+            audioIdActual = audio.ID;
+            window.audioIdActual = audio.ID;
+            renderizarDetalleAudio(audio);
+
+            const boton = document.getElementById('btn-reproducir');
+            boton.style.display = 'block';
+            boton.onclick = function() {
+                reproducirAudio(audio);
+            };
+        }
+
+        function renderizarDetalleAudio(audio) {
+            const contenedor = document.getElementById('detalle-audio');
+            const metadatos = audio.Metadatos || {};
+            const filas = [
+                ['Título', audio.Titulo || 'Sin título'],
+                ['ID', audio.ID],
+                ['Tipo', nombresTipos[audio.IDTipo] || audio.IDTipo]
+            ];
+
+            Object.entries(metadatos).forEach(([clave, valor]) => {
+                filas.push([clave, valor]);
+            });
+
+            contenedor.innerHTML = filas.map(([label, value]) => `
+                <div class="row">
+                    <strong>${label}</strong>
+                    <span>${value}</span>
+                </div>
+            `).join('');
+        }
+
+        function reproducirAudio(audio) {
+            if (audio && audio.ID) {
+                unirseAlCanal(audio.ID);
+            }
+
+            // Mostrar estado de carga en el botón
+            const botonReproducir = document.getElementById('btn-reproducir');
+            if (botonReproducir) {
+                botonReproducir.textContent = '⏳ Cargando audio...';
+                botonReproducir.disabled = true;
+                botonReproducir.style.opacity = '0.7';
+            }
+
+            if (typeof window.iniciar_streaming_cancion === 'function') {
+                window.iniciar_streaming_cancion(audio.ID);
+                document.getElementById('panel-reacciones').style.display = 'block';
+                mostrarActividad('→ ' + (window.nicknameActual || 'usuario') + ' comenzó a reproducir', 'join');
+            } else {
+                alert('No se encontró la función de streaming gRPC-Web.');
+                // Restaurar botón si falla
+                if (botonReproducir) {
+                    botonReproducir.textContent = '▶ Reproducir este audio';
+                    botonReproducir.disabled = false;
+                    botonReproducir.style.opacity = '1';
+                }
+            }
+        }
+        // Restaurar botón cuando el audio empiece a reproducirse realmente
+        document.addEventListener('DOMContentLoaded', function () {
+            const audioEl = document.getElementById('audio-player');
+            if (audioEl) {
+                audioEl.addEventListener('playing', function () {
+                    const botonReproducir = document.getElementById('btn-reproducir');
+                    if (botonReproducir) {
+                        botonReproducir.textContent = '▶ Reproducir este audio';
+                        botonReproducir.disabled = false;
+                        botonReproducir.style.opacity = '1';
+                    }
+                });
+                audioEl.addEventListener('error', function () {
+                    const botonReproducir = document.getElementById('btn-reproducir');
+                    if (botonReproducir) {
+                        botonReproducir.textContent = '▶ Reproducir este audio';
+                        botonReproducir.disabled = false;
+                        botonReproducir.style.opacity = '1';
+                    }
+                });
+            }
+        });
+
+        function enviarReaccion(emoji) {
+            if (typeof window._ws === 'object' && window._ws && window._ws.readyState === WebSocket.OPEN && window.audioIdActual && window.nicknameActual) {
+                window._ws.send(JSON.stringify({
+                    tipo: 'reaccion',
+                    audioId: window.audioIdActual,
+                    nickname: window.nicknameActual,
+                    emoji: emoji
+                }));
+            }
+        }
+
+        function unirseAlCanal(audioId) {
+                if (!audioId || !window.nicknameActual) {
+                    return;
+                }
+                const idCanal = Number(audioId);
+                if (_canalReaccionesDeseado === idCanal && window._ws && window._ws.readyState !== WebSocket.CLOSED) {
+                    return;
+                }
+                _canalReaccionesDeseado = idCanal;
+                _canalReaccionesActual = idCanal;
+                if (typeof window.conectarWebSocket === 'function') {
+                    window.conectarWebSocket();
+                }
+                const enviarJoin = function() {
+                    if (_canalReaccionesDeseado !== idCanal) {
+                        return;
+                    }
+                    if (!window._ws || window._ws.readyState !== WebSocket.OPEN) {
+                        return;
+                    }
+                    window._ws.send(JSON.stringify({
+                    tipo: 'join',
+                    audioId: audioId,
+                    nickname: window.nicknameActual
+                    }));
+                    window.audioIdActual = idCanal;
+                    _canalReaccionesActual = idCanal;
+                };
+                if (window._ws && window._ws.readyState === WebSocket.OPEN) {
+                    enviarJoin();
+                } else if (window._ws && window._ws.readyState === WebSocket.CONNECTING) {
+                    window._ws.addEventListener('open', enviarJoin, { once: true });
+            }
+        }
+
+        function salirDelCanal(audioId) {
+                if (!audioId || !window.nicknameActual) {
+                    return;
+                }
+                const idCanal = Number(audioId);
+                if (_canalReaccionesDeseado === idCanal) {
+                    _canalReaccionesDeseado = null;
+                }
+                const enviarLeave = function() {
+                    if (_canalReaccionesDeseado !== null) {
+                        return;
+                    }
+                    if (!window._ws || window._ws.readyState !== WebSocket.OPEN) {
+                        return;
+                    }
+                    window._ws.send(JSON.stringify({
+                    tipo: 'leave',
+                    audioId: audioId,
+                    nickname: window.nicknameActual
+                    }));
+                    if (Number(_canalReaccionesActual) === idCanal) {
+                        _canalReaccionesActual = null;
+                    }
+                };
+                if (window._ws && window._ws.readyState === WebSocket.OPEN) {
+                    enviarLeave();
+                } else if (window._ws && window._ws.readyState === WebSocket.CONNECTING) {
+                    window._ws.addEventListener('open', enviarLeave, { once: true });
+                } else {
+                    _canalReaccionesActual = null;
+                }
+        }
+
+        function manejarMensajeServidor(msg) {
+            if (!msg || !msg.tipo) return;
+            if (msg.tipo === 'usuario_unido') {
+                mostrarActividad('→ ' + msg.nickname + ' comenzó a reproducir', 'join');
+            } else if (msg.tipo === 'usuario_pauso') {
+                mostrarActividad('⏸ ' + msg.nickname + ' pausó la reproducción', 'pause');
+            } else if (msg.tipo === 'reaccion') {
+                mostrarActividad(msg.emoji + ' de ' + msg.nickname, 'reaccion');
+                mostrarAnimacionReaccion(msg.emoji, msg.nickname);
+            }
+        }
+
+        function mostrarActividad(texto, tipo) {
+            const log = document.getElementById('actividad-log');
+            if (!log) return;
+            const placeholder = log.querySelector('.empty-state');
+            if (placeholder) {
+                placeholder.remove();
+            }
+            const item = document.createElement('div');
+            item.className = 'actividad-item ' + tipo;
+            const ts = new Date().toLocaleTimeString();
+            item.textContent = '[' + ts + '] ' + texto;
+            log.prepend(item);
+            while (log.children.length > 20) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function mostrarAnimacionReaccion(emoji, nickname) {
+            const el = document.createElement('div');
+            el.className = 'reaccion-flotante';
+            el.textContent = emoji + ' ' + nickname;
+            el.style.cssText = `
+                position: fixed;
+                bottom: 100px;
+                left: ${50 + Math.random() * 200}px;
+                font-size: 24px;
+                animation: flotar 2s ease-out forwards;
+                z-index: 999;
+                pointer-events: none;
+            `;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 2100);
+        }
+
+        window.unirseAlCanal = unirseAlCanal;
+        window.salirDelCanal = salirDelCanal;
+        window.enviarReaccion = enviarReaccion;
+        window.manejarMensajeServidor = manejarMensajeServidor;
+        window.mostrarActividad = mostrarActividad;
+        window.mostrarAnimacionReaccion = mostrarAnimacionReaccion;
+        window.seleccionarAudio = seleccionarAudio;
+        window.reproducirAudio = reproducirAudio;
+        window.cargarCatalogoAudios = cargarCatalogoAudios;
+        // ─── POLLING AUTOMÁTICO DEL CATÁLOGO ───────────────────────────────────────
+        // Revisa cada 15 segundos si el servidor tiene audios nuevos.
+        // Si la cantidad cambió, recarga el catálogo sin reiniciar la sesión.
+        var _pollingInterval = null;
+        var _ultimaCantidadAudios = 0;
+
+        function iniciarPollingCatalogo() {
+            if (_pollingInterval) return; // ya está corriendo
+            _pollingInterval = setInterval(async function () {
+                // Solo hacer polling si el panel principal está visible
+                const panelPrincipal = document.getElementById('panel-principal');
+                if (!panelPrincipal || panelPrincipal.style.display === 'none') return;
+
+                try {
+                    const resp = await fetch('http://localhost:8082/audios');
+                    if (!resp.ok) return;
+                    const audiosNuevos = await resp.json();
+                    const nuevaCantidad = Array.isArray(audiosNuevos) ? audiosNuevos.length : 0;
+
+                    // Si cambió la cantidad, actualizar sin perder sesión
+                    if (nuevaCantidad !== _ultimaCantidadAudios && _ultimaCantidadAudios !== 0) {
+                        console.log('[Polling] Nuevos audios detectados:', nuevaCantidad, 'antes:', _ultimaCantidadAudios);
+                        actualizarCatalogoSilencioso(audiosNuevos);
+                    }
+
+                    _ultimaCantidadAudios = nuevaCantidad;
+                } catch (e) {
+                    // Ignorar errores de red silenciosamente
+                }
+            }, 15000); // cada 15 segundos
+        }
+
+        function detenerPollingCatalogo() {
+            if (_pollingInterval) {
+                clearInterval(_pollingInterval);
+                _pollingInterval = null;
+            }
+        }
+
+        // Actualiza el catálogo manteniendo el audio seleccionado y el tipo activo
+        function actualizarCatalogoSilencioso(audiosActualizados) {
+            const tipoActivoBtn = document.querySelector('#tipos-container button.active');
+            const idTipoActivo = tipoActivoBtn ? Number(tipoActivoBtn.dataset.idTipo) : null;
+            const audioSeleccionadoId = _audioSeleccionado ? _audioSeleccionado.ID : null;
+
+            // Actualizar el array global
+            _todosLosAudios = Array.isArray(audiosActualizados) ? audiosActualizados : [];
+            window._todosLosAudios = _todosLosAudios;
+
+            // Reconstruir tipos
+            const tipos = new Map();
+            _todosLosAudios.forEach(function (audio) {
+                if (!tipos.has(audio.IDTipo)) {
+                    tipos.set(audio.IDTipo, nombresTipos[audio.IDTipo] || ('Tipo ' + audio.IDTipo));
+                }
+            });
+
+            renderizarTipos(Array.from(tipos.entries()));
+
+            // Restaurar el tipo activo que tenía el usuario
+            if (idTipoActivo) {
+                marcarTipoActivo(idTipoActivo);
+                document.getElementById('tipo-seleccionado-label').textContent =
+                    '— ' + (nombresTipos[idTipoActivo] || 'Tipo ' + idTipoActivo);
+                filtrarPorTipo(idTipoActivo);
+            } else if (_todosLosAudios.length > 0) {
+                filtrarPorTipo(_todosLosAudios[0].IDTipo);
+                marcarTipoActivo(_todosLosAudios[0].IDTipo);
+            }
+
+            // Si había un audio seleccionado, verificar que sigue existiendo
+            if (audioSeleccionadoId) {
+                const sigueExistiendo = _todosLosAudios.find(function (a) {
+                    return Number(a.ID) === Number(audioSeleccionadoId);
+                });
+                if (sigueExistiendo) {
+                    _audioSeleccionado = sigueExistiendo;
+                }
+            }
+
+            // Actualizar contador de audios en el badge
+            const estado = document.getElementById('estado-catalogo');
+            if (estado) {
+                estado.textContent = _todosLosAudios.length + ' audios cargados';
+            }
+
+            // Mostrar un aviso suave al usuario (no intrusivo)
+            mostrarActividad('🔄 Catálogo actualizado: ' + _todosLosAudios.length + ' audios disponibles', 'join');
+
+            console.log('[Polling] Catálogo actualizado silenciosamente.');
+        }
+
+        window.iniciarPollingCatalogo = iniciarPollingCatalogo;
+        window.detenerPollingCatalogo = detenerPollingCatalogo;
+        window.actualizarCatalogoSilencioso = actualizarCatalogoSilencioso;
+// ─── FIN POLLING ────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            const query = new URLSearchParams(window.location.search);
+            const nick = query.get('nickname');
+            if (nick) {
+                document.getElementById('input-nickname').value = nick;
+            }
+        });
+    </script>
+</body>
+</html>
